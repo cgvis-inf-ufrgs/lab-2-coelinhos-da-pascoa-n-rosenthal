@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
           
           // ---- Altura ----
           float by;
-          float sineY = BASE_Y + JUMP_HEIGHT * sinf(t * JUMP_SPEED * 2.0f * M_PI + phase * 2.0f * M_PI);
+          float sineY = BASE_Y + JUMP_HEIGHT * fabs(sinf(t * JUMP_SPEED * 2.0f * M_PI + phase * 2.0f * M_PI));
           if (i % 3 == 0){
             by = sineY;
           } else {
