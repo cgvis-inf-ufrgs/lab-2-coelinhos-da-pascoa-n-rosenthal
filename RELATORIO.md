@@ -6,44 +6,19 @@
 
 ## Dados do aluno
 
-- **Cartão UFRGS**: <mark>`<preencher>`</mark>
-- **Nome**: <mark>`<preencher>`</mark>
+- **Cartão UFRGS**: <mark>`304709`</mark>
+- **Nome**: <mark>`Nícolas Rosenthal Dal Corso`</mark>
 
 ## Passos que eu segui para resolver o problema especificado (em formato de *"prompt"*)
 
-> [!IMPORTANT]
-> - Coloque aqui todas as informações necessárias para que alguém
->   (pessoa ou ferramenta de IA) possa reproduzir os seus passos para
->   solucionar o problema
-> - Escreva em formato imperativo, como se fosse um *prompt* com as
->   instruções a serem seguidas na solução do problema
-> - Seja objetivo e conciso: quanto *menos palavras* você utilizar,
->   melhor
-> - Seja técnico e use terminologia adequada: assuma que quem irá ler
->   os seus passos possui conhecimento de Ciência da Computação e
->   Computação Gráfica
-> - Caso você queira incluir informações "longas" (como algum *prompt*
->   grande usado com alguma ferramenta de IA), crie arquivos à parte e
->   adicione links no texto (por exemplo, crie o arquivo `PROMPTS.md`
->   e adicione um link markdown `[os prompts detalhados estão
->   aqui](PROMPTS.md)`)
-> - Novamente, lembre-se que você *não pode utilizar ferramentas
->   de IA para escrever este relatório*
-
-<mark>`<preencher>`</mark>
-
 ## Principais dificuldades encontradas durante o desenvolvimento (formato livre)
-
-<mark>`<preencher>`</mark>
+Identificar corretamente todas as transformações sobre os coelhos e sobre os ovos de Páscoa. Aprender a diferenciar transformações que estão acontecendo em relação ao /centro do objeto/, ou em relação a outro ponto no espaço (talvez a origem, ou o centro da circumferência ao longo da qual os coelhos orbitam).
 
 ## Você acha que conseguiu resolver o problema de forma adequada?
-
-<mark>`<preencher>`</mark>
+Eu acredito que pensei muito e me esforcei consideravalmente para associar matrizes/transformações naturais contra a implementação dos modelos, juntamente com as ginásticas mentais para considerar simultaneamente a cena global e os acontecimentos locais (os ovos de Páscoa também fazem movimento orbital em relação ao centro da circumferência; simultaneamente, orbitam os coelhos, em relação ao plano XY _dos coelhos_). Também foram consideráveis em aprendizado: como adequar funções que oscilam ao longo do tempo (`sinf()`, `cosf()`, `atan2()` etc) para produzir uma animação suave e que fizesse sentido, sem saltos em altura ou outro eixo.
 
 ## Se você quiser compartilhar mais alguma coisa, coloque aqui:
 
-<mark>`<preencher>`</mark>
+apesar de desafiador e _overwhelming_ no início, com um pouco de prática sentimos que tudo é possível com OpenGL e alguma trigonometria.
 
 ## Se você possui alguma sugestão para o professor sobre esta atividade, coloque aqui:
-
-<mark>`<preencher>`</mark>
