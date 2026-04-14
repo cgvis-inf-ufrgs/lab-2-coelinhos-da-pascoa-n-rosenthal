@@ -215,6 +215,37 @@ GLint g_view_uniform;
 GLint g_projection_uniform;
 GLint g_object_id_uniform;
 
+/* helpers para animação */
+// Easing: suaviza a entrada e saída do pulo (cúbico)
+float EaseInOut(float u) {
+   return u * u * (3.0f - 2.0f * u);
+}
+
+// Parábola normalizada com easing aplicado
+float JumpCurve(float u) {
+    // u in [0,1], returns 0 at 0 and 1, 1 at 0.5
+    float t = u * M_PI;       // 0 to PI
+    return sinf(t) * sinf(t); // smooth parabola-like
+}
+
+float GetHoppingBunnyZ(float t,
+                       float startZ = 0.0f,
+                       float forwardSpeed = 2.0f,
+                       float hopPeriod = 0.8f,
+                       float hopForwardAmp = 0.3f,
+                       float phaseOffset = 0.0f)
+{
+    // Normalised phase of the hop cycle (0..1)
+    float u = fmodf(t / hopPeriod + phaseOffset, 1.0f);
+    float jumpFactor = JumpCurve(u);
+
+    // Linear forward motion + an extra forward push during the jump
+    float linearZ = startZ + forwardSpeed * t;
+    float hopZ = hopForwardAmp * jumpFactor;   // extra forward leap
+
+    return linearZ + hopZ;
+}
+
 int main(int argc, char* argv[])
 {
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
@@ -244,7 +275,7 @@ int main(int argc, char* argv[])
     // Criamos uma janela do sistema operacional, com 800 colunas e 600 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "INF01047 - Seu Cartao - Seu Nome", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "INF01047 - 304709 - Nícolas Rosenthal Dal Corso", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -318,6 +349,7 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    // !!!
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -396,27 +428,101 @@ int main(int argc, char* argv[])
         glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
         glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
-        #define SPHERE 0
-        #define BUNNY  1
-        #define PLANE  2
 
-        // Desenhamos o modelo da esfera
-        model = Matrix_Translate(-1.0f,0.0f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, SPHERE);
-        DrawVirtualObject("the_sphere");
+      /* constantes */
+      /* coelhos    */
+      const int   N              = 6;     // quantidade de coelhos
+      const float FORWARD_SPEED  = 1.0f;  // módulo velocidade dos coelhos
+      const float ORBIT_RADIUS   = 1.7f;  // raio da órbita
+      const float JUMP_SPEED     = 0.4f;  // módulo velocidade var. altura
+      const float JUMP_HEIGHT    = 0.5f;  // altura máxima
+      const float BASE_Y         = 0.4f;  // base da altura dos coelhos
+      const float BUNNY_SCALE    = 0.25f; // escala tamanho dos coelhos
 
-        // Desenhamos o modelo do coelho
-        model = Matrix_Translate(1.0f,0.0f,0.0f);
-        glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-        glUniform1i(g_object_id_uniform, BUNNY);
-        DrawVirtualObject("the_bunny");
+      const float FLIP_INTERVAL  = 6.0f;   // segundos entre mortais
+      const float FLIP_DURATION  = 2.0f;   // duração do mortal em segundos
+      const float FLIP_HEIGHT    = 0.5f;   // altura extra durante o mortal
+
+      /* ovos      */
+      const int   NUM_EGGS       = 2;      // quantidade de ovos por coelho
+      const float EGG_ORBIT_R    = 0.4f;   // raio da órbita do ovo
+      const float EGG_ORBIT_SPD  = 2.0f;   // módulo velocidade orbital ovo
+      
+      /* modelos */
+      #define SPHERE 0
+      #define BUNNY  1
+      #define PLANE  2
+
+      float t = glfwGetTime();
+      for (int i = 0; i < N; ++i)
+        {
+          // coelhos
+          // ---- Posição orbital ----
+          float phase = (float)i / N;
+          float angle = -(t * FORWARD_SPEED / ORBIT_RADIUS + phase * 2.0f * M_PI);
+          float bx = cosf(angle) * ORBIT_RADIUS;
+          float bz = sinf(angle) * ORBIT_RADIUS;
+          float facing = atan2f(bx, bz) + M_PI;
+
+          // ---- Estado do mortal ----
+          // Cada coelho tem seu próprio offset de fase para não saltarem juntos
+          float flipOffset  = phase * FLIP_INTERVAL;                      // defasagem entre coelhos
+          float flipCycle   = fmodf(t + flipOffset, FLIP_INTERVAL);       // onde estamos no ciclo
+          bool  isFlipping  = (flipCycle < FLIP_DURATION);                // estamos no mortal?
+          float flipT       = isFlipping ? (flipCycle / FLIP_DURATION) : 0.0f; // [0,1] durante o mortal
+          
+          // ---- Altura ----
+          float by;
+          float sineY = BASE_Y + JUMP_HEIGHT * sinf(t * JUMP_SPEED * 2.0f * M_PI + phase * 2.0f * M_PI);
+          if (i % 3 == 0){
+            by = sineY;
+          } else {
+             if (isFlipping)
+            by = sineY + FLIP_HEIGHT * sinf(flipT * M_PI); // seno base + parábola do mortal por cima
+          else
+            by = sineY;                                     // só o seno
+          };
+
+          // ---- Rotação do mortal (0 → 2π durante flipT) ----
+          float flipAngle = isFlipping ? (flipT * 2.0f * M_PI) : 0.0f;
+
+          // ---- Matriz de modelagem ----
+          glm::mat4 model =
+            Matrix_Translate(bx, by, bz)                        *   // translação orbital
+            Matrix_Rotate_Y(facing)                             *
+            Matrix_Rotate_Z(flipAngle)                          *   // mortal para frente (eixo X local)
+            Matrix_Scale(BUNNY_SCALE, BUNNY_SCALE, BUNNY_SCALE);
+
+          glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+          glUniform1i(g_object_id_uniform, BUNNY);
+          DrawVirtualObject("the_bunny");
+
+          // ---- Ovos orbitando o coelho no plano YZ global ----
+          for (int e = 0; e < NUM_EGGS; ++e)
+            {
+              float eggAngle = t * EGG_ORBIT_SPD + (2.0f * M_PI * e / NUM_EGGS);
+
+              float ex = bx;
+              float ey = by + EGG_ORBIT_R * cosf(eggAngle);
+              float ez = bz + EGG_ORBIT_R * sinf(eggAngle);
+
+              glm::mat4 eggModel =
+                Matrix_Translate(ex, ey, ez) *
+                Matrix_Scale(0.08f, 0.12f, 0.08f);
+
+              glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(eggModel));
+              glUniform1i(g_object_id_uniform, SPHERE);
+              DrawVirtualObject("the_sphere");
+            }
+}
 
         // Desenhamos o plano do chão
         model = Matrix_Translate(0.0f,-1.0f,0.0f) * Matrix_Scale(4.0f,1.0f,4.0f);
         glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(g_object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
+
+      
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1483,4 +1589,3 @@ void PrintObjModelInfo(ObjModel* model)
 
 // set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
 // vim: set spell spelllang=pt_br :
-
